@@ -1,1 +1,5 @@
 openai==2.24.0
+# MLflow for experiment logging
+mlflow==2.7.0
+# dotenv for loading .env files
+python-dotenv==1.0.0
