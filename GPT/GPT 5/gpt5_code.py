@@ -1,11 +1,19 @@
 import os
 import tempfile
 from typing import List, Optional
-
+from prompt import system_prompt, user_prompt
 from openai import OpenAI
 import mlflow
 from dotenv import load_dotenv
+import json
+import os
 
+# Path to JSON file (adjust if needed)
+# Current directory → GPT 5
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Go up twice → main_folder → data → prompts.json
+DATA_PATH = os.path.join(CURRENT_DIR, "..", "..", "data", "sample_questions.json")
 
 # Load environment variables from .env in the repository root (if present)
 load_dotenv()
@@ -79,17 +87,43 @@ class GPT5Client:
         Returns the `output_text` attribute of the response when present,
         otherwise returns the stringified response.
         """
-        response = self.client.responses.create(model=model, input=prompt)
+        response = self.client.responses.create(model=model, 
+                                                input=[
+                                                            {
+            "role": "developer",
+            "content": system_prompt
+        },
+        {
+                                                                "role": "user", 
+                                                                "content": prompt
+                                                            }
+                                                        ], 
+                                                reasoning={"effort": "medium"},
+                                                max_output_tokens=2048)
         output = getattr(response, "output_text", None) or str(response)
 
         # log prompt/output to mlflow (non-blocking)
         self._log_to_mlflow(prompt=prompt, output=output, model=model)
 
         return output
+    
+    def load_prompts(self, file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data
+      
 
 
 if __name__ == "__main__":
     # Example usage
     # Ensure OPENAI_API_KEY is set in env or pass openai_api_key to constructor
     client = GPT5Client()
-    print(client.generate("Write a short bedtime story about a unicorn."))
+    prompts = client.load_prompts(DATA_PATH)
+
+        # If JSON is like {"prompts": [...]}
+    if isinstance(prompts, dict) and "prompts" in prompts:
+        prompts = prompts["prompts"]
+
+    for i, prompt in enumerate(prompts, start=1):
+        for p in prompt:
+            print(client.generate(prompt[p]))
