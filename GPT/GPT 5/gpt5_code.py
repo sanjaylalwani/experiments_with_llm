@@ -81,7 +81,7 @@ class GPT5Client:
             # Logging must not break generation
             pass
 
-    def generate(self, prompt: str, model: str = "gpt-5.4") -> str:
+    def generate(self, prompt: str, model: str = "gpt-5.2") -> str:
         """Generate text using the OpenAI client and log to MLflow.
 
         Returns the `output_text` attribute of the response when present,
@@ -112,8 +112,6 @@ class GPT5Client:
             data = json.load(f)
         return data
       
-
-
 if __name__ == "__main__":
     # Example usage
     # Ensure OPENAI_API_KEY is set in env or pass openai_api_key to constructor
